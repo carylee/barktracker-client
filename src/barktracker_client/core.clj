@@ -71,55 +71,23 @@
       (client/post "http://localhost:3000/barks" {:form-params {:start start :stop stop} :throw-exceptions false})
       (catch Exception ex))))
 
-(defn listen-for-barks [threshold line buffer]
-  ;(let [line (open-line audio-format)
-        ;buffer (byte-array (/ (.getBufferSize line) 5))]
-    (loop [bark-start-time 0]
-      (.read line buffer 0 (count buffer))
-      (let [is-barking (> (rms buffer) threshold)
-            was-barking (< 0 bark-start-time)]
-        (cond
-          (= was-barking is-barking) (recur bark-start-time)
-          is-barking (recur (System/currentTimeMillis))
-          :else (do (log-bark bark-start-time (System/currentTimeMillis)) (recur 0))))))
-
-(defn listen-for-barks-mic [threshold]
-  (let [line (open-line audio-format)
-        buffer (byte-array (/ (.getBufferSize line) 5))]
-    (listen-for-barks threshold line buffer)))
-
-(defn listen-for-barks-file [threshold file]
-  (let [line (file-line file)
-        buffer (byte-array 1000)]
-    (listen-for-barks threshold line buffer)))
+(defn listen-for-barks
+  ([] (listen-for-barks (open-line audio-format)))
+  ([line]
+    (let [in-buffer (byte-array buffer-size)
+          out-buffer (short-array (/ buffer-size 2))]
+      (loop [bark-start-time 0]
+        (let [audio (read-into-buffer line in-buffer out-buffer)
+              is-barking (> (rms audio) threshold)
+              was-barking (< 0 bark-start-time)]
+          (cond
+            (= was-barking is-barking) (recur bark-start-time)
+            is-barking (recur (System/currentTimeMillis))
+            :else (do (log-bark bark-start-time (System/currentTimeMillis)) (recur 0))))))))
 
 (defn read-from-line [line]
   (let [byte-buffer (byte-array buffer-size)]
     (.read line byte-buffer)
     (to-short-array byte-buffer)))
 
-;(defn read-entire-line [line]
-  ;(loop [data []]
-    ;(cond
-    ;(recur (conj data (read-from-line line)))))
-
-;(defn listen-for-barks [line]
-  ;(loop [bark-start-time 0]
-    ;(let [buffer (read-from-line buffer)
-          ;is-barking (> (rms buffer) threshold)]
-         ;buffer (read-from-line line)]
-
-(defn listen-for-barks-recording [threshold]
-  (let [line (open-line audio-format)
-        buffer (byte-array (/ (.getBufferSize line) 5))]
-    (loop [bark-start-time 0]
-      (.read line buffer 0 (count buffer))
-      (let [is-barking (> (rms buffer) threshold)
-            was-barking (< 0 bark-start-time)]
-        (cond
-          (= was-barking is-barking) (recur bark-start-time)
-          is-barking (recur (System/currentTimeMillis))
-          :else (do (log-bark bark-start-time (System/currentTimeMillis)) (recur 0)))))))
-
-(defn -main []
-  (listen-for-barks-mic 4))
+(defn -main [])

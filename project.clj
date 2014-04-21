@@ -7,4 +7,5 @@
                  [incanter/incanter-core "1.5.4"]
                  [incanter/incanter-charts "1.5.4"]
                  [clj-http "0.9.1"]]
+  :dev-dependencies [[lein-reload "1.0.0"]]
   :main barktracker-client.core)
