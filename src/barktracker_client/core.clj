@@ -64,26 +64,32 @@
     (.read ais byte-buffer)
     (to-short-array byte-buffer)))
 
-(defn log-bark [start stop]
+(defn log-bark [start silence-duration bark-duration]
   (do
-    (println (str "Start: " start ", stop: " stop))
-    (try
-      (client/post "http://localhost:3000/barks" {:form-params {:start start :stop stop} :throw-exceptions false})
-      (catch Exception ex))))
+    (println (str "Silence: " silence-duration ", bark: " bark-duration " at " start))))
+    ;(println (str "Start: " start ", stop: " stop ", at " start))))))
+    ;(try
+      ;(client/post "http://localhost:3000/barks" {:form-params {:start start :stop stop} :throw-exceptions false})
+      ;(catch Exception ex))))
 
 (defn listen-for-barks
   ([] (listen-for-barks (open-line audio-format)))
   ([line]
     (let [in-buffer (byte-array buffer-size)
           out-buffer (short-array (/ buffer-size 2))]
-      (loop [bark-start-time 0]
+      (loop [bark-start-time 0
+             silence-duration 0
+             bark-duration 0]
         (let [audio (read-into-buffer line in-buffer out-buffer)
               is-barking (> (rms audio) threshold)
-              was-barking (< 0 bark-start-time)]
+              was-barking (> bark-duration 0)]
           (cond
-            (= was-barking is-barking) (recur bark-start-time)
-            is-barking (recur (System/currentTimeMillis))
-            :else (do (log-bark bark-start-time (System/currentTimeMillis)) (recur 0))))))))
+            (= true was-barking is-barking) (recur bark-start-time silence-duration (inc bark-duration))
+            (= false was-barking is-barking) (recur 0 (inc silence-duration) 0)
+            (true? is-barking) (recur (System/currentTimeMillis) silence-duration 1)
+            (true? was-barking) (do
+                                  (log-bark bark-start-time silence-duration bark-duration)
+                                  (recur 0 0 0))))))))
 
 (defn read-from-line [line]
   (let [byte-buffer (byte-array buffer-size)]
