@@ -42,9 +42,9 @@
          out-buffer (short-array (/ buffer-size 2))]
      (flatten (repeatedly (* seconds 10) #(vec (read-into-buffer line in-buffer out-buffer)))))))
 
-(defn chart-audio [seconds]
-  (let [audio (get-audio seconds)]
-    (view (xy-plot (range (count audio)) audio))))
+;(defn chart-audio [seconds]
+  ;(let [audio (get-audio seconds)]
+    ;(view (xy-plot (range (count audio)) audio))))
 
 (defn log-bark [pad length start]
   (do
@@ -72,4 +72,5 @@
                                   (log-bark silence-duration bark-duration bark-start-time)
                                   (recur 0 0 0))))))))
 
-(defn -main [])
+(defn -main []
+  (listen-for-barks))
